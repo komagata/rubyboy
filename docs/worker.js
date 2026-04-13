@@ -33,9 +33,9 @@ class Rubyboy {
     const { vm, wasi } = await DefaultRubyVM(module);
     vm.eval(`
       require 'js'
-      require_relative 'lib/executor'
+      require_relative 'lib/executor_audio'
 
-      $executor = Executor.new
+      $executor = ExecutorAudio.new
     `);
 
     this.vm = vm;
@@ -45,15 +45,25 @@ class Rubyboy {
   sendPixelData() {
     this.vm.eval(`$executor.exec(${this.directionKey}, ${this.actionKey})`);
 
-    const file = this.rootDir.contents.get('video.data');
-    const bytes = file.data;
+    const videoFile = this.rootDir.contents.get('video.data');
+    const videoBytes = videoFile.data;
+    const transfers = [videoBytes.buffer];
 
-    postMessage({ type: 'pixelData', data: bytes.buffer }, [bytes.buffer]);
+    let audioBytes = null;
+    const audioFile = this.rootDir.contents.get('audio.data');
+    if (audioFile && audioFile.data.byteLength > 0) {
+      audioBytes = audioFile.data;
+      transfers.push(audioBytes.buffer);
+    }
+
+    postMessage(
+      { type: 'frame', video: videoBytes.buffer, audio: audioBytes ? audioBytes.buffer : null },
+      transfers
+    );
   }
 
-  emulationLoop() {
+  tick() {
     this.sendPixelData();
-    setTimeout(this.emulationLoop.bind(this), 0);
   }
 }
 
@@ -69,9 +79,9 @@ self.addEventListener('message', async (event) => {
     }
   }
 
-  if (event.data.type === 'startRubyboy') {
+  if (event.data.type === 'tick') {
     try {
-      rubyboy.emulationLoop();
+      rubyboy.tick();
     } catch (error) {
       postMessage({ type: 'error', message: error.message });
     }
