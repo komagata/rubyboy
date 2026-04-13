@@ -15,6 +15,14 @@ module Rubyboy
       @f = 0xb0
     end
 
+    def state_dump(io)
+      io.write([@a, @b, @c, @d, @e, @f, @h, @l].pack('C*'))
+    end
+
+    def state_restore(io)
+      @a, @b, @c, @d, @e, @f, @h, @l = io.read(8).unpack('C*')
+    end
+
     def a=(value)
       @a = value & 0xff
     end

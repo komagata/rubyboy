@@ -40,6 +40,30 @@ module Rubyboy
         @wave_ram = Array.new(16, 0)
       end
 
+      def state_dump(io)
+        io.write([@cycles, @frequency, @frequency_timer, @sweep_period, @sweep_shift,
+                  @period, @period_timer, @current_volume, @initial_volume,
+                  @shadow_frequency, @sweep_timer, @length_timer,
+                  @wave_duty_position, @wave_duty_pattern,
+                  @output_level, @volume_shift].pack('l<*'))
+        io.write([@enabled, @dac_enabled, @length_enabled, @is_upwards,
+                  @is_decrementing, @sweep_enabled].map { |b| b ? 1 : 0 }.pack('C*'))
+        io.write(@wave_ram.pack('C*'))
+      end
+
+      def state_restore(io)
+        ints = io.read(16 * 4).unpack('l<*')
+        @cycles, @frequency, @frequency_timer, @sweep_period, @sweep_shift,
+        @period, @period_timer, @current_volume, @initial_volume,
+        @shadow_frequency, @sweep_timer, @length_timer,
+        @wave_duty_position, @wave_duty_pattern,
+        @output_level, @volume_shift = ints
+        bools = io.read(6).unpack('C*').map { |b| b != 0 }
+        @enabled, @dac_enabled, @length_enabled, @is_upwards,
+        @is_decrementing, @sweep_enabled = bools
+        @wave_ram = io.read(16).unpack('C*')
+      end
+
       def step(cycles)
         @cycles += cycles
 

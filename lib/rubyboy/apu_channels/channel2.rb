@@ -32,6 +32,24 @@ module Rubyboy
         @wave_duty_pattern = 0
       end
 
+      def state_dump(io)
+        io.write([@cycles, @frequency, @frequency_timer, @period, @period_timer,
+                  @current_volume, @initial_volume, @shadow_frequency, @length_timer,
+                  @wave_duty_position, @wave_duty_pattern].pack('l<*'))
+        io.write([@enabled, @dac_enabled, @length_enabled, @is_upwards,
+                  @is_decrementing].map { |b| b ? 1 : 0 }.pack('C*'))
+      end
+
+      def state_restore(io)
+        ints = io.read(11 * 4).unpack('l<*')
+        @cycles, @frequency, @frequency_timer, @period, @period_timer,
+        @current_volume, @initial_volume, @shadow_frequency, @length_timer,
+        @wave_duty_position, @wave_duty_pattern = ints
+        bools = io.read(5).unpack('C*').map { |b| b != 0 }
+        @enabled, @dac_enabled, @length_enabled, @is_upwards,
+        @is_decrementing = bools
+      end
+
       def step(cycles)
         @cycles += cycles
 

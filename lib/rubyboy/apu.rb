@@ -17,10 +17,32 @@ module Rubyboy
       @fs = 0
       @samples = Array.new(1024, 0.0)
       @sample_idx = 0
+      @enabled = false
       @channel1 = ApuChannels::Channel1.new
       @channel2 = ApuChannels::Channel2.new
       @channel3 = ApuChannels::Channel3.new
       @channel4 = ApuChannels::Channel4.new
+    end
+
+    def state_dump(io)
+      io.write([@nr50, @nr51, @enabled ? 1 : 0].pack('C*'))
+      io.write([@cycles, @sampling_cycles, @fs, @sample_idx].pack('L<*'))
+      io.write(@samples.pack('E*'))
+      @channel1.state_dump(io)
+      @channel2.state_dump(io)
+      @channel3.state_dump(io)
+      @channel4.state_dump(io)
+    end
+
+    def state_restore(io)
+      @nr50, @nr51, enabled = io.read(3).unpack('C*')
+      @enabled = enabled != 0
+      @cycles, @sampling_cycles, @fs, @sample_idx = io.read(16).unpack('L<*')
+      @samples = io.read(1024 * 8).unpack('E*')
+      @channel1.state_restore(io)
+      @channel2.state_restore(io)
+      @channel3.state_restore(io)
+      @channel4.state_restore(io)
     end
 
     def step(cycles)

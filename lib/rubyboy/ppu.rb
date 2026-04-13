@@ -74,6 +74,38 @@ module Rubyboy
       @sprite_cache = Array.new(40) { { y: 0xff, x: 0xff, tile_index: 0, flags: 0 } }
     end
 
+    def state_dump(io)
+      io.write([@mode, @lcdc, @stat, @scy, @scx, @ly, @lyc, @obp0, @obp1, @wy, @wx, @bgp, @wly].pack('C*'))
+      io.write([@cycles].pack('L<'))
+      io.write(@vram.pack('C*'))
+      io.write(@oam.pack('C*'))
+      @tile_cache.each { |row| io.write(row.pack('C*')) }
+      io.write(@tile_map_cache.pack('S<*'))
+      io.write(@bgp_cache.pack('L<*'))
+      io.write(@obp0_cache.pack('L<*'))
+      io.write(@obp1_cache.pack('L<*'))
+      @sprite_cache.each do |s|
+        io.write([s[:y], s[:x], s[:tile_index], s[:flags]].pack('C*'))
+      end
+    end
+
+    def state_restore(io)
+      @mode, @lcdc, @stat, @scy, @scx, @ly, @lyc, @obp0, @obp1, @wy, @wx, @bgp, @wly =
+        io.read(13).unpack('C*')
+      @cycles = io.read(4).unpack1('L<')
+      @vram = io.read(0x2000).unpack('C*')
+      @oam = io.read(0xa0).unpack('C*')
+      @tile_cache = Array.new(384) { io.read(64).unpack('C*') }
+      @tile_map_cache = io.read(2048 * 2).unpack('S<*')
+      @bgp_cache = io.read(16).unpack('L<*')
+      @obp0_cache = io.read(16).unpack('L<*')
+      @obp1_cache = io.read(16).unpack('L<*')
+      @sprite_cache = Array.new(40) do
+        y, x, tile_index, flags = io.read(4).unpack('C*')
+        { y:, x:, tile_index:, flags: }
+      end
+    end
+
     def read_byte(addr)
       case addr
       when 0x8000..0x9fff

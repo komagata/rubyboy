@@ -16,6 +16,21 @@ module Rubyboy
       @halted = false
     end
 
+    def state_dump(io)
+      @registers.state_dump(io)
+      io.write([@pc, @sp].pack('S<*'))
+      io.write([@ime ? 1 : 0, @ime_delay ? 1 : 0, @halted ? 1 : 0].pack('C*'))
+    end
+
+    def state_restore(io)
+      @registers.state_restore(io)
+      @pc, @sp = io.read(4).unpack('S<*')
+      ime, ime_delay, halted = io.read(3).unpack('C*')
+      @ime = ime != 0
+      @ime_delay = ime_delay != 0
+      @halted = halted != 0
+    end
+
     def exec
       opcode = read_byte(@pc)
       # print_log(opcode)

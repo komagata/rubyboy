@@ -9,6 +9,14 @@ module Rubyboy
       @interupt = interupt
     end
 
+    def state_dump(io)
+      io.write([@mode, @action, @direction].pack('C*'))
+    end
+
+    def state_restore(io)
+      @mode, @action, @direction = io.read(3).unpack('C*')
+    end
+
     def read_byte(addr)
       raise "not implemented: write_byte #{addr}" unless addr == 0xff00
 

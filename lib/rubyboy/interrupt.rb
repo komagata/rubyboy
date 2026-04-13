@@ -15,6 +15,14 @@ module Rubyboy
       @if = 0
     end
 
+    def state_dump(io)
+      io.write([@ie, @if].pack('C*'))
+    end
+
+    def state_restore(io)
+      @ie, @if = io.read(2).unpack('C*')
+    end
+
     def read_byte(addr)
       case addr
       when 0xff0f

@@ -12,6 +12,18 @@ module Rubyboy
         @ram_banking_mode = false
       end
 
+      def state_dump(io)
+        io.write([@rom_bank, @ram_bank].pack('C*'))
+        io.write([@ram_enable ? 1 : 0, @ram_banking_mode ? 1 : 0].pack('C*'))
+      end
+
+      def state_restore(io)
+        @rom_bank, @ram_bank = io.read(2).unpack('C*')
+        ram_enable, ram_banking_mode = io.read(2).unpack('C*')
+        @ram_enable = ram_enable != 0
+        @ram_banking_mode = ram_banking_mode != 0
+      end
+
       def read_byte(addr)
         case (addr >> 12)
         when 0x0, 0x1, 0x2, 0x3

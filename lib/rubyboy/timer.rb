@@ -11,6 +11,16 @@ module Rubyboy
       @interrupt = interrupt
     end
 
+    def state_dump(io)
+      io.write([@div, @cycles].pack('S<*'))
+      io.write([@tima, @tma, @tac].pack('C*'))
+    end
+
+    def state_restore(io)
+      @div, @cycles = io.read(4).unpack('S<*')
+      @tima, @tma, @tac = io.read(3).unpack('C*')
+    end
+
     def step(cycles)
       before_cycles = @cycles
       after_cycles = @cycles + cycles
