@@ -5,7 +5,25 @@ module Rubyboy
     CPU_CLOCK_HZ = 4_194_304
     CYCLE_NANOSEC = 1_000_000_000 / CPU_CLOCK_HZ
 
-    def initialize(rom_path)
+    SPEED_KEYS = {
+      SDL::SDL_SCANCODE_F1 => 1.0,
+      SDL::SDL_SCANCODE_F2 => 2.0,
+      SDL::SDL_SCANCODE_F3 => 4.0,
+      SDL::SDL_SCANCODE_F4 => 8.0
+    }.freeze
+
+    attr_reader :speed
+
+    def self.normalize_speed(speed)
+      normalized = Float(speed)
+      raise ArgumentError, 'speed must be 1.0 or greater' unless normalized >= 1.0 && normalized.finite?
+
+      normalized
+    rescue ArgumentError, TypeError
+      raise ArgumentError, 'speed must be 1.0 or greater'
+    end
+
+    def initialize(rom_path, speed: 1.0)
       rom_data = File.open(rom_path, 'r') { _1.read.bytes }
       rom = Rom.new(rom_data)
       @ram = Ram.new(rom)
@@ -19,6 +37,8 @@ module Rubyboy
       @cpu = Cpu.new(@bus, interrupt)
       @lcd = Lcd.new
       @audio = Audio.new
+      @prev_speed_keys = Array.new(SPEED_KEYS.size, 0)
+      set_speed(speed, announce: false)
       @save_file = rom.battery? ? SaveFile.new(default_save_path(rom_path)) : nil
       load_save_file
     end
@@ -34,14 +54,15 @@ module Rubyboy
           while elapsed_real_time > elapsed_machine_time
             cycles = @cpu.exec
             @timer.step(cycles)
-            @audio.queue(@apu.samples) if @apu.step(cycles)
+            samples_ready = @apu.step(cycles)
+            @audio.queue(@apu.samples) if samples_ready && @speed <= 1.0
             if @ppu.step(cycles)
               @lcd.draw(@ppu.buffer)
               key_input_check
               throw :exit_loop if @lcd.window_should_close?
             end
 
-            elapsed_machine_time += cycles * CYCLE_NANOSEC
+            elapsed_machine_time += cycles * @cycle_nanosec
           end
         end
       end
@@ -102,6 +123,28 @@ module Rubyboy
       action = (keyboard_state[SDL::SDL_SCANCODE_K]) | (keyboard_state[SDL::SDL_SCANCODE_J] << 1) | (keyboard_state[SDL::SDL_SCANCODE_U] << 2) | (keyboard_state[SDL::SDL_SCANCODE_I] << 3)
       @joypad.direction_button(15 - direction)
       @joypad.action_button(15 - action)
+
+      check_speed_keys(keyboard_state)
+    end
+
+    def check_speed_keys(keyboard_state)
+      SPEED_KEYS.each_with_index do |(scancode, speed), index|
+        current = keyboard_state[scancode]
+        set_speed(speed) if current != 0 && @prev_speed_keys[index] == 0
+        @prev_speed_keys[index] = current
+      end
+    end
+
+    def set_speed(speed, announce: true)
+      @speed = self.class.normalize_speed(speed)
+      @cycle_nanosec = CYCLE_NANOSEC / @speed
+      @audio.clear if @speed > 1.0
+      @lcd.title = "Ruby Boy (#{format_speed}x)"
+      puts "Speed: #{format_speed}x" if announce
+    end
+
+    def format_speed
+      @speed.to_i == @speed ? @speed.to_i : @speed
     end
   end
 end

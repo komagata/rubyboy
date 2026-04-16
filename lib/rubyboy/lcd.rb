@@ -23,6 +23,10 @@ module Rubyboy
       @event = FFI::MemoryPointer.new(:pointer)
     end
 
+    def title=(title)
+      SDL.SetWindowTitle(@window, title)
+    end
+
     def draw(framebuffer)
       @buffer.write_array_of_uint32(framebuffer)
       SDL.UpdateTexture(@texture, nil, @buffer, SCREEN_WIDTH * 4)

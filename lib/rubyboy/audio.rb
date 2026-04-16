@@ -21,6 +21,10 @@ module Rubyboy
       SDL.PauseAudioDevice(@device, 0)
     end
 
+    def clear
+      SDL.ClearQueuedAudio(@device)
+    end
+
     def queue(buffer)
       # Block until the SDL audio queue has drained enough to accept another
       # buffer. The previous implementation called SDL.ClearQueuedAudio here

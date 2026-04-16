@@ -4,18 +4,25 @@
 require 'rubyboy'
 require 'optparse'
 
+options = { speed: 1.0 }
 begin
   OptionParser.new do |opts|
-    opts.banner = "Usage: #{File.basename($PROGRAM_NAME)} ROM_PATH"
+    opts.banner = "Usage: #{File.basename($PROGRAM_NAME)} [options] ROM_PATH"
+
+    opts.on('--speed SPEED', Float, 'Initial emulation speed multiplier (default: 1.0)') do |speed|
+      options[:speed] = speed
+    end
 
     opts.on('-h', '--help', 'Displays this help') do
       puts opts
       exit
     end
   end.parse!
+
+  raise OptionParser::InvalidArgument, '--speed must be 1.0 or greater' unless options[:speed] >= 1.0
 rescue OptionParser::ParseError => e
   puts e.message
-  puts "Usage: #{File.basename($PROGRAM_NAME)} ROM_PATH"
+  puts "Usage: #{File.basename($PROGRAM_NAME)} [options] ROM_PATH"
   exit 1
 end
 
@@ -27,5 +34,7 @@ if defined?(RubyVM::YJIT)
 else
   puts 'YJIT is not available in this environment.'
 end
+puts "Speed: #{options[:speed]}x"
+puts 'Speed keys: F1=1x, F2=2x, F3=4x, F4=8x'
 
-Rubyboy::Emulator.new(rom_path).start
+Rubyboy::Emulator.new(rom_path, speed: options[:speed]).start

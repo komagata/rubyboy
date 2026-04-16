@@ -35,6 +35,9 @@ If bundler is not being used to manage dependencies, install the gem by executin
 ## Usage
 
     $ RUBYOPT=--yjit rubyboy <rom_path>
+    $ RUBYOPT=--yjit rubyboy --speed 8 <rom_path>
+
+Use `--speed` to set the initial emulation speed. While running, press `F1` / `F2` / `F3` / `F4` to switch to `1x` / `2x` / `4x` / `8x`. Audio is muted while running faster than `1x`.
 
 | Key   | Button |
 | :---: | :----: |

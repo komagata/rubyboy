@@ -26,6 +26,11 @@ module Rubyboy
     SDL_SCANCODE_U = 24
     SDL_SCANCODE_I = 12
 
+    SDL_SCANCODE_F1 = 58
+    SDL_SCANCODE_F2 = 59
+    SDL_SCANCODE_F3 = 60
+    SDL_SCANCODE_F4 = 61
+
     attach_function :Init, 'SDL_Init', [:uint32], :int
     attach_function :InitSubSystem, 'SDL_InitSubSystem', [:uint32], :int
     attach_function :CreateWindow, 'SDL_CreateWindow', %i[string int int int int uint32], :pointer
